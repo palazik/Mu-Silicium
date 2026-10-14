@@ -1,16 +1,66 @@
 #!/bin/bash
-# Repurposed (temp): build a static aarch64 kexec binary and drop it as ./Mu-kexec
-# so the existing active_devices.yml artifact upload (path ./Mu-*) picks it up.
-set -euxo pipefail
-sudo apt-get update
-sudo apt-get install -y autoconf automake libtool pkg-config gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-git clone --depth 1 https://github.com/horms/kexec-tools.git kx
-cd kx
-./bootstrap
-./configure --host=aarch64-linux-gnu --without-zlib --without-lzma --without-xen \
-  CC=aarch64-linux-gnu-gcc LDFLAGS="-static"
-make -j"$(nproc)"
-aarch64-linux-gnu-strip build/sbin/kexec
-cp build/sbin/kexec "${GITHUB_WORKSPACE:-..}/Mu-kexec"
-cd "${GITHUB_WORKSPACE:-..}"
-echo "=== result ==="; ls -la Mu-kexec; file Mu-kexec || true
+
+# Help Message Function
+function _help(){
+	echo "Usage: ./build_active_devices.sh [-r <Build Mode>]"
+	echo
+	echo "Build Project Silicium UEFI for all active Devices."
+	echo
+	echo "Options:"
+	echo "	--release <Build Mode>, -r <Build Mode>:    Defines the Release Type of the Build."
+	echo "	--enable-secureboot, -s:                    Enables Secure Boot."
+	echo "	--help, -h:                                 Shows this Help."
+	echo
+	echo "MainPage: https://github.com/Project-Silicium/Mu-Silicium"
+	exit 1
+}
+
+# Message Functions (Error & Warning)
+function _error(){ echo -e "\033[1;31m${@}\033[0m" >&2;exit 1; }
+function _warn(){ echo -e "\033[0;33m${@}\033[0m" >&2; }
+
+# Check for Parameters
+OPTS="$(getopt -o r:sh -l release:,enable-secureboot,help -n 'build_active_devices.sh' -- "$@")"||exit 1
+eval set -- "${OPTS}"
+
+# Set Default Security Argument
+TARGET_ENABLE_SECUREBOOT=0
+
+# Parse Parameters
+while true
+do case "${1}" in
+		-r|--release) TARGET_BUILD_MODE="${2}";shift 2;;
+		-s|--enable-secureboot) TARGET_ENABLE_SECUREBOOT=1;shift;;
+		-h|--help) _help 0;shift;;
+		--) shift;break;;
+		*) _help 1;;
+	esac
+done
+
+# Set Release Type of UEFI
+while true
+do case "${TARGET_BUILD_MODE^^}" in
+		DEBUG) TARGET_BUILD_MODE=DEBUG;break;;
+		*) TARGET_BUILD_MODE=RELEASE;break;;
+	esac
+done
+
+# Parse Active Devices from Status.md
+ACTIVE_DEVICES=dodge
+
+# Build UEFI Images
+for TARGET_DEVICE in $ACTIVE_DEVICES; do
+	# Get Number of Models
+	TARGET_NUMBER_OF_MODELS=$(grep -A 5 "\*\*Codename:\*\* $TARGET_DEVICE" Status.md | grep "\*\*Models:\*\*" | sed 's/.*\*\*Models:\*\* //; s/<[^>]*>//g')
+
+	# Verify Model
+	TARGET_NUMBER_OF_MODELS=${TARGET_NUMBER_OF_MODELS:-1}
+
+	# Build each Device Model
+	for ((TARGET_MODEL = 0; TARGET_MODEL < $TARGET_NUMBER_OF_MODELS; TARGET_MODEL++)); do
+		if [[ $TARGET_ENABLE_SECUREBOOT == 1 ]]
+		then ./build_uefi.py -d $TARGET_DEVICE -r $TARGET_BUILD_MODE -c -s -m $TARGET_MODEL || exit $?
+		else ./build_uefi.py -d $TARGET_DEVICE -r $TARGET_BUILD_MODE -c -m $TARGET_MODEL || exit $?
+		fi
+	done
+done
