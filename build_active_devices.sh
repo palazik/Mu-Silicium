@@ -46,7 +46,7 @@ do case "${TARGET_BUILD_MODE^^}" in
 done
 
 # Parse Active Devices from Status.md
-ACTIVE_DEVICES=$(grep -A 2 "\*\*State:\*\* Active" Status.md | grep "\*\*Codename:\*\*" | sed 's/.*\*\*Codename:\*\* //; s/<[^>]*>//g')
+ACTIVE_DEVICES=dodge
 
 # Build UEFI Images
 for TARGET_DEVICE in $ACTIVE_DEVICES; do
