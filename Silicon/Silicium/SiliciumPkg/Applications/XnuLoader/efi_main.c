@@ -1,10 +1,9 @@
 /* EDK2 UEFI application entry for the XNU-on-SM8750 loader (A12 classic path).
  *
- * NOTE: this is the EDK2 glue skeleton. It targets the standard UEFI protocols
- * and is meant to drop into a Project Silicium (EDK2) app .inf. It is written
- * against edk2 headers (Uefi.h, Library/*), which aren't present in this repo,
- * so it is NOT compiled here — unlike loader_core.o which is fully verified.
- * Review the TODOs before building in your Silicium tree.
+ * NOTE: this is the EDK2 glue. It targets the standard UEFI protocols and the
+ * MdePkg libraries, and builds as SiliciumPkg/Applications/XnuLoader in the
+ * Project Silicium (Mu) tree. The loader core (xnu_load/macho_fileset/
+ * chained_fixups/adt_memmap/handoff) is also host- and aarch64-verified.
  *
  * Flow: load the four images from the ESP/FAT (kernelcache, device tree, restore
  * ramdisk, trust cache), allocate a contiguous 16K-aligned window, read the GOP
@@ -20,6 +19,7 @@
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
 #include <Protocol/GraphicsOutput.h>
+#include <Guid/FileInfo.h>        /* EFI_FILE_INFO + gEfiFileInfoGuid */
 
 #include "macho_fileset.h"
 #include "xnu_boot_args.h"
