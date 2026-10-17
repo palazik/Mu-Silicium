@@ -86,6 +86,9 @@ READ_LOCK_STATUS   = TRUE
   # RAM Manager
   INF SiliciumPkg/Drivers/RamManagerDxe/RamManagerDxe.inf
 
+  # iOS/XNU loader (UEFI application; launch from the Silicium shell/menu)
+  INF SiliciumPkg/Applications/XnuLoader/XnuLoader.inf
+
   # SmBios
   INF MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
   INF SiliciumPkg/Drivers/SmBiosTableDxe/SmBiosTableDxe.inf

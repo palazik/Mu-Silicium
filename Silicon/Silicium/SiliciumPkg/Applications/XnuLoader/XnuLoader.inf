@@ -1,0 +1,34 @@
+## EDK2 module def — add to your Project Silicium package's .dsc components.
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = XnuLoader
+  FILE_GUID      = 7B9E2A10-1C3D-4E5F-9A2B-000000A12B00
+  MODULE_TYPE    = UEFI_APPLICATION
+  VERSION_STRING = 0.1
+  ENTRY_POINT    = UefiMain
+
+[Sources]
+  efi_main.c
+  xnu_load.c
+  macho_fileset.c
+  xnu_boot_args.c
+  chained_fixups.c
+  adt_memmap.c
+  handoff.S
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  BaseMemoryLib
+
+[Protocols]
+  gEfiLoadedImageProtocolGuid
+  gEfiSimpleFileSystemProtocolGuid
+  gEfiGraphicsOutputProtocolGuid
+
+[Guids]
+  gEfiFileInfoGuid                 # used by read_file() GetInfo(FileInfo)
